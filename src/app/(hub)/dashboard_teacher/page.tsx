@@ -2,8 +2,6 @@
 
 import React from 'react';
 import { useState, useEffect } from "react";
-import { Button } from '@/components/ui/button';
-import { ColorType } from '@/types/color-types';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -15,19 +13,16 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { SquarePlus, School, LoaderCircle, Palette } from "lucide-react";
+import { SquarePlus, School, LoaderCircle, Share2, Clipboard, X } from "lucide-react";
 import { toast } from "sonner";
 import axios from 'axios';
 import { useSession } from "next-auth/react";
 import { ClassRoomCard, ClassRoomCardDashBoard } from "@/components/ui/card-classroom";
-import { Colors } from '@prisma/client';
+import { SelectSubjectTypes } from "@/components/ui/select-subjectType";
+import { SelectSubject } from "@/components/ui/select-subject";
+import { SelectedStatus } from "@/components/ui/selsect-status";
+import { SelectColors } from '@/components/ui/select-colors';
+import { Button } from '@/components/ui/button';
 
 
 interface ClassRoom {
@@ -36,64 +31,28 @@ interface ClassRoom {
     description: string;
     colors: string;
     subject_type: string;
+    code: string;
+    userCount:string;
     // สามารถเพิ่มฟิลด์อื่น ๆ ตามที่คุณมีได้
 }
 
-export const colorCode = (color: ColorType): string => {
-    switch (color) {
-        case 'gray':
-            return 'bg-[#4B5563]';
-        case 'orange':
-            return 'bg-[#F97316]';
-        case 'amber':
-            return 'bg-[#FBBF24]';
-        case 'yellow':
-            return 'bg-[#FDE047]';
-        case 'lime':
-            return 'bg-[#84CC16]';
-        case 'green':
-            return 'bg-[#22C55E]';
-        case 'emerald':
-            return 'bg-[#10B981]';
-        case 'teal':
-            return 'bg-[#14B8A6]';
-        case 'cyan':
-            return 'bg-[#06B6D4]';
-        case 'sky':
-            return 'bg-[#0EA5E9]';
-        case 'blue':
-            return 'bg-[#3B82F6]';
-        case 'indigo':
-            return 'bg-[#4F46E5]';
-        case 'violet':
-            return 'bg-[#8B5CE8]';
-        case 'purple':
-            return 'bg-[#A855F7]';
-        case 'fuchsia':
-            return 'bg-[#D946EF]';
-        case 'pink':
-            return 'bg-[#EC4899]';
-        case 'rose':
-            return 'bg-[#F43F5E]';
-        case 'red':
-            return 'bg-[#EF4444]';
-        default:
-            return 'bg-[#3B82F6]';  // Default color
-    }
-};
 
 function page() {
     const [classRoomName, setClassRoomName] = useState("");
     const [classDescription, setClassDescription] = useState("");
     const [classRooms, setClassRooms] = useState<ClassRoom[]>([]);
     const [classColor, setClassColor] = useState("rose");
+    const [classType, setClassType] = useState("Other");
+    const [classSubject, setClassSubject] = useState("Other");
+    const [classPermission, setClassPermission] = useState("pending");
+    const [classCode, setClassCode] = useState("pending");
     const [woring, setWoring] = useState("");
     const { data: session, status } = useSession();
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingGetRoom, setIsLoadingGetRoom] = useState(false);
+    const [isShare, setIsShare] = useState(false);
     const [userId, setUserID] = useState("");
-    const ColorsEnum = Object.values(Colors);
-
+    const [copied, setCopied] = useState(false);
 
 
 
@@ -114,7 +73,7 @@ function page() {
             const response = await axios.post('http://localhost:3000/api/get_teacher_room', {
                 id: userId,
             });
-            setClassRooms(response.data.getClassRoom);
+            setClassRooms(response.data.classRooms);
 
             if (response.status === 200) {
                 setIsLoadingGetRoom(false)
@@ -138,6 +97,9 @@ function page() {
                     className: classRoomName,
                     classDescription: classDescription,
                     color: classColor,
+                    type: classType,
+                    permission: classPermission,
+                    subject: classSubject
                 });
                 getClassRoom();
 
@@ -180,6 +142,12 @@ function page() {
         }
     }
 
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(classCode);
+        setCopied(true); // แสดงข้อความว่าคัดลอกสำเร็จ
+        setTimeout(() => setCopied(false), 3000); 
+    };
     return (
         <>
             <div className='grid gap-2 relative'>
@@ -196,7 +164,7 @@ function page() {
                     </AlertDialogContent>
                 </AlertDialog>
                 <div className="flex justify-center items-center bg-primary/5 h-[2rem] w-full fixed top-30">
-                    <p className='text-lg font-bold text-primary/60  '>ClassRoom</p>
+                    <p className='text-lg font-bold text-primary/60  '>Dashboard</p>
                 </div>
                 <div className='z-40 grid gap-2 w-full fixed top-40 right-0'>
                     <div className='flex justify-end mr-2'>
@@ -218,31 +186,10 @@ function page() {
                                                     <input onChange={(event) => { setClassRoomName(event.target.value) }} className='rounded-r-sm pl-2 outline-0 border-b-2 border-primary/30 w-full' type="text" name="roomname" id="roomname" placeholder='class room name' />
                                                 </div>
                                             </div>
-                                            <div>
-                                                <p>Color</p>
-                                                <div className='flex'>
-                                                    <div className='bg-primary/20 p-1 rounded-l-sm text-primary/60'>
-                                                        <Palette size={28} />
-                                                    </div>
-                                                    <Select onValueChange={setClassColor}>
-                                                        <SelectTrigger className="w-full">
-                                                            <SelectValue placeholder="Select a Color" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {ColorsEnum.map((color) => (
-                                                                <SelectItem key={color} value={color}>
-                                                                    <div className='flex gap-2 items-center'>
-                                                                        {/* ใช้ฟังก์ชัน colorCode ในการแปลงสี */}
-                                                                        <div className={`w-[40px] h-[20px] rounded-lg ${colorCode(color as ColorType)}`} />
-                                                                        {/* แสดงชื่อสีโดยทำให้ตัวแรกเป็นตัวใหญ่ */}
-                                                                        {color.charAt(0).toUpperCase() + color.slice(1)}
-                                                                    </div>
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                            </div>
+                                            <SelectColors onValueChange={(color) => { setClassColor(color) }} />
+                                            <SelectedStatus message='Permission' onValueChange={(type) => { setClassPermission(type) }} />
+                                            <SelectSubjectTypes onValueChange={(type) => { setClassType(type) }} />
+                                            <SelectSubject onValueChange={(type) => { setClassSubject(type) }} />
                                             <div>
                                                 <label htmlFor="classDescription">Class Description</label>
                                                 <div className='flex'>
@@ -284,6 +231,41 @@ function page() {
                             </AlertDialogHeader>
                         </AlertDialogContent>
                     </AlertDialog>
+                    <AlertDialog open={isShare}>
+                        <AlertDialogContent>
+                            <AlertDialogHeader className='w-full'>
+                                <AlertDialogTitle className='flex gap-2'>
+                                    <Share2 size={25} />
+                                    <p>
+                                        Share Classroom
+                                    </p>
+                                </AlertDialogTitle>
+                                {copied && <span className="text-green-600">
+                                    Successfully copied!
+                                </span>}
+                                <AlertDialogDescription className='flex gap-2 items-center w-full'>
+                                    <span className="pt-2 pb-2 pl-1 pr-1 w-[24rem] rounded-md overflow-x-auto bg-primary/5 border-2 overflow-hidden whitespace-nowrap">
+                                        <span className="animate-slide scroll-ml-6 snap-start">
+                                            {classCode}
+                                        </span>
+                                    </span>
+                                    <Button
+                                        className='border-2'
+                                        variant={"ghost"}
+                                        size={"sm"}
+                                        onClick={handleCopy} >
+                                        <Clipboard size={25} /><span>Copy</span>
+                                    </Button>
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogAction onClick={() => { setIsShare(false) }}>
+                                    <X size={25} />
+                                    <span>Colse</span>
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                     {
                         Array.isArray(classRooms) && classRooms.map((room) => (
                             <div key={room.class_id}>
@@ -293,6 +275,10 @@ function page() {
                                     Description={room.description} // ใช้ description จากข้อมูล
                                     Color={room.colors}
                                     Icon={room.subject_type}
+                                    Code={room.code}
+                                    onClickShare={(type) => { setClassCode(type); setIsShare(true); }}
+                                    count={room.userCount}
+                                    status=''
                                 />
                             </div>
                         ))

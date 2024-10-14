@@ -30,6 +30,7 @@ import { Colors } from '@prisma/client';
 import { ColorType } from '@/types/color-types';
 import { SelectColors } from '@/components/ui/select-colors';
 import { SelectSubjectTypes } from "@/components/ui/select-subjectType";
+import { SelectSubject } from "@/components/ui/select-subject";
 import { SelectedStatus } from "@/components/ui/selsect-status";
 
 
@@ -139,6 +140,7 @@ function page({ params }: { params: { class_id: string } }) {
                                         <SelectedStatus message='Permission' onValueChange={(type) => { console.log(type) }} />
                                         <SelectColors onValueChange={(color) => { setClassColor(color) }} />
                                         <SelectSubjectTypes onValueChange={(type) => { console.log(type) }} />
+                                        <SelectSubject onValueChange={(type) => { console.log(type) }} />
                                         <div className='bg-rose-500/10 p-4 rounded-sm'>
                                             <div className='bg-red-600/50 p-2 rounded-md mb-2'>
                                                 <p className='text-center text-md text-white '>Warning Danger Zone!</p>

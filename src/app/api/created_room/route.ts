@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: Request) {
     try {
-        const { id, className, classDescription ,color} = await request.json();
+        const { id, className, classDescription ,color,permission,subject,type} = await request.json();
 
         const userIdInt = parseInt(id, 10);
         const classroomCode =  uuidv4();
@@ -20,7 +20,10 @@ export async function POST(request: Request) {
                             class_name:className,
                             description:classDescription,
                             code:classroomCode,
-                            colors:color
+                            colors:color,
+                            subject_type:type,
+                            subject:subject,
+                            permission:permission,
                         }
                     
                     });

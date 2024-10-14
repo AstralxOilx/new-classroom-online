@@ -1,6 +1,6 @@
 
 import { subjectTypeMapping, SubjectIcon } from '@/lib/subjectType';
-import { Settings, UserRound, Share2 } from "lucide-react";
+import { Settings, UserRound, Share2, CircleAlert } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from 'react';
 import { ColorType } from '@/types/color-types';
@@ -11,7 +11,11 @@ interface ClassRoomCardProps {
     Description: string;
     Color: string;
     Icon: string;
+    Code: string;
+    status: string;
+    count: string;
     classId: Number;
+    onClickShare?: (code: string) => void;
     onClickCard?: () => void;
     onClickSetting?: () => void;
 }
@@ -63,29 +67,30 @@ export const colorCode = (color: ColorType): string => {
 
 
 
-const ClassRoomCard: React.FC<ClassRoomCardProps> = ({ classId, Name, Description, Color, Icon, onClickCard }) => {
+const ClassRoomCard: React.FC<ClassRoomCardProps> = ({ classId, Name, Description, Color, Icon, count, onClickCard }) => {
     const [selectedColor, setSelectedColor] = useState<ColorType>(Color as ColorType);
-
     return (
         <div
-            className='grid gap-2 content-center justify-items-center  h-52 w-[18rem] bg-primary/5 m-3 rounded-md border border-primary/10 hover:cursor-pointer hover:scale-105 transition-transform duration-300'
+            className='grid gap-2 content-center justify-items-center  h-52 w-[22rem] bg-primary/5 m-3 rounded-md border border-primary/10 hover:cursor-pointer hover:scale-105 transition-transform duration-300'
             onClick={onClickCard} // เรียกใช้ฟังก์ชันเมื่อมีการคลิก
         >
             <div className='flex gap-2 justify-center items-center'>
                 <div className={` ${colorCode(selectedColor)} grid gap-2 content-center justify-items-center p-1 w-[7rem] h-[7rem] text-clip overflow-hidden rounded-lg border`}>
-                    <p className='text-5xl text-white/80 font-bold'>{Name.slice(0, 2).toUpperCase()}</p>
+                    <p className='text-5xl text-white/80 font-bold'>{Name.slice(0, 2).toUpperCase() || ''}</p>
                 </div>
                 <div>
-                    <div className='grid gap-2 w-[7rem] h-10 text-clip overflow-hidden'>
-                        <p className='text-center text-2xl font-bold overflow-hidden whitespace-nowrap text-ellipsis'>
-                            {Name}
+                    <div className='grid gap-2 w-[11rem] h-10 text-clip overflow-hidden'>
+                        <p className='text-center text-xl font-bold overflow-hidden whitespace-nowrap text-ellipsis'>
+                            {Name.charAt(0).toUpperCase() + Name.slice(1)}
                         </p>
                     </div>
                     <div className='flex gap-2 justify-center items-center text-clip overflow-hidden'>
                         <div className='border-2 border-primary/10 p-1 rounded-sm text-primary/60'>
                             <SubjectIcon subjectType={Icon as keyof typeof subjectTypeMapping} />
                         </div>
-                        <p className='text-center text-sm font-medium overflow-hidden whitespace-nowrap text-ellipsis'>{Icon}</p>
+                        <div className='grid gap-2 content-center w-[7rem] h-10 text-clip overflow-hidden'>
+                            <p className='text-center text-sm font-medium overflow-hidden whitespace-nowrap text-ellipsis'>{Icon}</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -94,51 +99,116 @@ const ClassRoomCard: React.FC<ClassRoomCardProps> = ({ classId, Name, Descriptio
 };
 
 
-const ClassRoomCardDashBoard: React.FC<ClassRoomCardProps> = ({ classId, Name, Description, Color, Icon, onClickCard, onClickSetting }) => {
+const ClassRoomCardDashBoard: React.FC<ClassRoomCardProps> = ({ classId, Name, Description, Color, Icon, Code, count, onClickShare, onClickCard, onClickSetting }) => {
 
     const [selectedColor, setSelectedColor] = useState<ColorType>(Color as ColorType);
     const router = useRouter();
+    const [code, setCode] = useState('');
+    const handleCode = (code: string) => {
+        setCode(code);
+        if (onClickShare) {
+            onClickShare(code);
+        }
+    };
+
 
     return (
         <>
             <div className="relative">
-                <div className='flex gap-2 justify-center items-center  h-52 w-[18rem] bg-primary/5 m-3 rounded-md border border-primary/10 hover:cursor-pointer transition-transform duration-300'
+                <div className='flex gap-2 justify-center items-center  h-52 w-[22rem] bg-primary/5 m-3 rounded-md border border-primary/10 hover:cursor-pointer transition-transform duration-300'
                     onClick={onClickCard}>
                     <div className={`${colorCode(selectedColor)} grid gap-2 content-center justify-items-center p-1 w-[7rem] h-[7rem] text-clip overflow-hidden rounded-lg border`}>
                         <p className='text-5xl text-white/80 font-bold'>{Name.slice(0, 2).toUpperCase()}</p>
                     </div>
                     <div>
-                        <div className='grid gap-2 w-[7rem] h-10 text-clip overflow-hidden'>
-                            <p className='text-center text-2xl  font-bold overflow-hidden whitespace-nowrap text-ellipsis'>
-                                {Name}
+                        <div className='grid gap-2 w-[11rem] h-10 text-clip overflow-hidden'>
+                            <p className='text-center text-xl  font-bold overflow-hidden whitespace-nowrap text-ellipsis'>
+                                {Name.charAt(0).toUpperCase() + Name.slice(1)}
                             </p>
                         </div>
                         <div className='flex gap-2 justify-center items-center text-clip overflow-hidden'>
-                            <div className='border-2 border-primary/10 p-1 rounded-sm  text-primary/60'>
+                            <div className='border-2 border-primary/10 p-1 rounded-sm text-primary/60'>
                                 <SubjectIcon subjectType={Icon as keyof typeof subjectTypeMapping} />
                             </div>
-                            <p className='text-center text-sm font-medium overflow-hidden whitespace-nowrap text-ellipsis'>{Icon}</p>
+                            <div className='grid gap-2 content-center w-[7rem] h-10 text-clip overflow-hidden'>
+                                <p className='text-center text-sm font-medium overflow-hidden whitespace-nowrap text-ellipsis'>{Icon}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div onClick={() => {
-                      router.push(`/setting?classId=${classId}`);
+                    router.push(`/setting?classId=${classId}`);
                 }}
                     className="absolute  bottom-3 right-5 w-10 h-10 bg-primary/10 grid content-center justify-items-center rounded-sm hover:cursor-pointer hover:scale-105 transition-transform duration-300">
                     <Settings className="text-primary" size={25} />
                 </div>
-                <div onClick={() => { console.log("ID: ", classId, " Name: ", Name, " Color: ") }}
+                <div onClick={() => handleCode(Code)}
                     className="absolute  bottom-3 right-16 w-10 h-10 bg-primary/10 grid content-center justify-items-center rounded-sm hover:cursor-pointer hover:scale-105 transition-transform duration-300">
                     <Share2 className="text-primary" size={25} />
                 </div>
                 <div
-                    className="absolute bg-primary/5 p-1 bottom-2 left-10 rounded-sm w-15 h-10 flex gap-1 justify-center items-center">
+                    className="absolute bg-primary/5 p-1 bottom-2 left-10 rounded-sm  h-10 flex gap-1 justify-center items-center">
                     <UserRound className="text-primary" size={25} />
-                    <p className='text-sm'>0</p>
+                    <p className='text-sm'>{count}</p>
                 </div>
             </div>
         </>
     );
 };
 
-export { ClassRoomCard, ClassRoomCardDashBoard };
+
+
+const ClassRoomCardDashBoardStudent: React.FC<ClassRoomCardProps> = ({ classId, Name, Description, Color, count, Icon, status, onClickCard, }) => {
+
+    const [selectedColor, setSelectedColor] = useState<ColorType>(Color as ColorType);
+    const router = useRouter();
+
+
+    return (
+        <>
+            <div className="relative">
+                <div className='flex gap-2 justify-center items-center  h-52 w-[22rem] bg-primary/5 m-3 rounded-md border border-primary/10 hover:cursor-pointer transition-transform duration-300'
+                    onClick={onClickCard}>
+                    <div className={`${colorCode(selectedColor)} grid gap-2 content-center justify-items-center p-1 w-[7rem] h-[7rem] text-clip overflow-hidden rounded-lg border`}>
+                        <p className='text-5xl text-white/80 font-bold'>{Name.slice(0, 2).toUpperCase() || ''}</p>
+                    </div>
+                    <div>
+                        <div className='grid gap-2 w-[11rem] h-10 text-clip overflow-hidden'>
+                            <p className='text-center text-xl  font-bold overflow-hidden whitespace-nowrap text-ellipsis'>
+                            {Name.charAt(0).toUpperCase() + Name.slice(1)}
+                            </p>
+                        </div>
+                        <div className='flex gap-2 justify-center items-center text-clip overflow-hidden'>
+                            <div className='border-2 border-primary/10 p-1 rounded-sm text-primary/60'>
+                                <SubjectIcon subjectType={Icon as keyof typeof subjectTypeMapping} />
+                            </div>
+                            <div className='grid gap-2 content-center w-[7rem] h-10 text-clip overflow-hidden'>
+                                <p className='text-center text-sm font-medium overflow-hidden whitespace-nowrap text-ellipsis'>{Icon}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div onClick={() => {
+                    router.push(`/setting?classId=${classId}`);
+                }}
+                    className="absolute  bottom-3 right-5 w-10 h-10 bg-primary/10 grid content-center justify-items-center rounded-sm hover:cursor-pointer hover:scale-105 transition-transform duration-300">
+                    <Settings className="text-primary" size={25} />
+                </div>
+                <div
+                    className="absolute p-1 bottom-3 right-16 h-10 bg-primary/10 rounded-sm flex gap-1 justify-center items-center ">
+                    <CircleAlert className="text-primary" size={25} />
+                    <p className='text-sm'> {status.charAt(0).toUpperCase() + status.slice(1)}</p>
+                </div>
+                <div
+                    className="absolute bg-primary/5 p-1 bottom-2 left-10 rounded-sm w-15 h-10 flex gap-1 justify-center items-center">
+                    <UserRound className="text-primary" size={25} />
+                    <p className='text-sm'>{count}</p>
+                </div>
+            </div>
+        </>
+    );
+};
+
+
+
+export { ClassRoomCard, ClassRoomCardDashBoard, ClassRoomCardDashBoardStudent };
