@@ -35,9 +35,14 @@ model Users {
 
 model ClassRoom {
   class_id    Int       @id @default(autoincrement())
-  class_name  String    @db.VarChar(100)
+  class_name  String    @db.VarChar(30)
   teacher_id  Int
-  description String?
+  description String    @db.VarChar(100)
+  code String @unique
+  colors Colors @default(rose)
+  subject Subject @default(Other)
+  subject_type SubjectType @default(Other)
+  permission  Status    @default(pending)
   created_at  DateTime  @default(now()) @db.Timestamptz
   updated_at  DateTime  @updatedAt @db.Timestamptz
 
@@ -52,6 +57,7 @@ model ClassroomStudent {
   id        Int      @id @default(autoincrement())
   class_id  Int
   student_id Int
+  status     Status    @default(pending)
   joined_at DateTime @default(now()) @db.Timestamptz
 
   classRoom ClassRoom @relation(fields: [class_id], references: [class_id], onDelete: Cascade)
@@ -127,4 +133,67 @@ enum Status {
   pending
   active
   inactive
+}
+
+
+enum Subject {
+  ThaiLanguage
+  EnglishLanguage
+  ChineseLanguage
+  JapaneseLanguage
+  FrenchLanguage
+  Mathematics
+  Physics
+  Chemistry
+  Biology
+  EnglishLiterature
+  History
+  Geography
+  ComputerScience
+  Economics
+  BusinessStudies
+  Psychology
+  Sociology
+  Philosophy
+  ArtandDesign
+  Music
+  PhysicalEducation
+  PoliticalScience
+  EnvironmentalScience
+  Engineering
+  InformationTechnology
+  Other
+}
+
+
+enum SubjectType {
+  Linguistics
+  MathematicsAndScience
+  SocialSciences
+  ArtsAndDesign
+  OccupationalAndTechnologyStudies
+  HealthAndPhysicalEducation
+  BusinessAndEconomics
+  Other
+}
+
+enum Colors {
+  gray
+  orange
+  amber
+  yellow
+  lime
+  green
+  emerald
+  teal
+  cyan
+  sky
+  blue
+  indigo
+  violet
+  purple
+  fuchsia
+  pink
+  rose
+  red
 }

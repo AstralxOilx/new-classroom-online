@@ -25,6 +25,7 @@ CREATE TABLE "ClassRoom" (
     "class_name" VARCHAR(100) NOT NULL,
     "teacher_id" INTEGER NOT NULL,
     "description" TEXT,
+    "code" TEXT NOT NULL,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ NOT NULL,
 
@@ -36,6 +37,7 @@ CREATE TABLE "ClassroomStudent" (
     "id" SERIAL NOT NULL,
     "class_id" INTEGER NOT NULL,
     "student_id" INTEGER NOT NULL,
+    "status" "Status" NOT NULL DEFAULT 'pending',
     "joined_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "ClassroomStudent_pkey" PRIMARY KEY ("id")

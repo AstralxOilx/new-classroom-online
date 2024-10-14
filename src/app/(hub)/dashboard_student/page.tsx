@@ -27,10 +27,9 @@ import axios from 'axios';
 import { useSession } from "next-auth/react";
 import { ClassRoomCard, ClassRoomCardDashBoard } from "@/components/ui/card-classroom";
 import { Colors } from '@prisma/client';
-import { ColorType } from '@/types/color-types';
 import {SelectColors} from '@/components/ui/select-colors';
-import {SubjectIcon} from '@/lib/subjectType';
- 
+
+
 interface ClassRoom {
     class_id: number;
     class_name: string;
@@ -40,48 +39,6 @@ interface ClassRoom {
     // สามารถเพิ่มฟิลด์อื่น ๆ ตามที่คุณมีได้
 }
 
-export const colorCode = (color: ColorType): string => {
-    switch (color) {
-        case 'gray':
-            return 'bg-[#4B5563]';
-        case 'orange':
-            return 'bg-[#F97316]';
-        case 'amber':
-            return 'bg-[#FBBF24]';
-        case 'yellow':
-            return 'bg-[#FDE047]';
-        case 'lime':
-            return 'bg-[#84CC16]';
-        case 'green':
-            return 'bg-[#22C55E]';
-        case 'emerald':
-            return 'bg-[#10B981]';
-        case 'teal':
-            return 'bg-[#14B8A6]';
-        case 'cyan':
-            return 'bg-[#06B6D4]';
-        case 'sky':
-            return 'bg-[#0EA5E9]';
-        case 'blue':
-            return 'bg-[#3B82F6]';
-        case 'indigo':
-            return 'bg-[#4F46E5]';
-        case 'violet':
-            return 'bg-[#8B5CE8]';
-        case 'purple':
-            return 'bg-[#A855F7]';
-        case 'fuchsia':
-            return 'bg-[#D946EF]';
-        case 'pink':
-            return 'bg-[#EC4899]';
-        case 'rose':
-            return 'bg-[#F43F5E]';
-        case 'red':
-            return 'bg-[#EF4444]';
-        default:
-            return 'bg-[#3B82F6]';  // Default color
-    }
-};
 
 function page() {
     const [classRoomName, setClassRoomName] = useState("");
@@ -94,7 +51,7 @@ function page() {
     const [classRooms, setClassRooms] = useState<ClassRoom[]>([]);
     const [userId, setUserID] = useState("");
     const ColorsEnum = Object.values(Colors);
-    const [selectedColor, setSelectedColor] = useState<ColorType>();
+
 
 
     useEffect(() => {
@@ -107,8 +64,7 @@ function page() {
         if (userId) {
             getClassRoom();
         }
-    }, [userId]);
-
+    }, [userId]); // เพิ่ม userId เป็น dependency
     const getClassRoom = async () => {
         try {
             setIsLoadingGetRoom(true);
@@ -116,6 +72,7 @@ function page() {
                 id: userId,
             });
             setClassRooms(response.data.getClassRoom);
+
             if (response.status === 200) {
                 setIsLoadingGetRoom(false)
 
@@ -205,7 +162,7 @@ function page() {
                             <AlertDialogTrigger className='flex gap-2 bg-primary p-2 font-bold text-secondary rounded-sm hover:scale-105 transition-transform duration-300'><SquarePlus />Created Room</AlertDialogTrigger>
                             <AlertDialogContent>
                                 <AlertDialogHeader>
-                                    <AlertDialogTitle>Created Classroom</AlertDialogTitle>
+                                    <AlertDialogTitle>Joined Classroom</AlertDialogTitle>
                                     <AlertDialogDescription></AlertDialogDescription>
                                     <div>
                                         <form className='grid gap-4'>
@@ -218,7 +175,7 @@ function page() {
                                                     <input onChange={(event) => { setClassRoomName(event.target.value) }} className='rounded-r-sm pl-2 outline-0 border-b-2 border-primary/30 w-full' type="text" name="roomname" id="roomname" placeholder='class room name' />
                                                 </div>
                                             </div>
-                                            <SelectColors onValueChange={(color) => {setClassColor(color)}} />
+                                            <SelectColors onValueChange={(color) => { setClassColor(color) }} />
                                             <div>
                                                 <label htmlFor="classDescription">Class Description</label>
                                                 <div className='flex'>
@@ -240,7 +197,7 @@ function page() {
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={createRoom}>Created</AlertDialogAction>
+                                    <AlertDialogAction onClick={createRoom}>Joined</AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
@@ -267,13 +224,14 @@ function page() {
                     {
                         Array.isArray(classRooms) && classRooms.map((room) => (
                             <div key={room.class_id}>
-                                <ClassRoomCard
+                                <ClassRoomCardDashBoard
                                     classId={room.class_id}
                                     Name={room.class_name} // ใช้ class_name จากข้อมูล
                                     Description={room.description} // ใช้ description จากข้อมูล
                                     Color={room.colors}
                                     Icon={room.subject_type}
                                     onClickCard={() => { console.log("onClickCard") }}
+                                    onClickSetting={() => { console.log("onClickSetting") }}
                                 />
                             </div>
                         ))

@@ -3,6 +3,7 @@
 import React from 'react';
 import { useState, useEffect } from "react";
 import { Button } from '@/components/ui/button';
+import { ColorType } from '@/types/color-types';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -27,10 +28,8 @@ import axios from 'axios';
 import { useSession } from "next-auth/react";
 import { ClassRoomCard, ClassRoomCardDashBoard } from "@/components/ui/card-classroom";
 import { Colors } from '@prisma/client';
-import { ColorType } from '@/types/color-types';
-import {SelectColors} from '@/components/ui/select-colors';
-import {SubjectIcon} from '@/lib/subjectType';
- 
+
+
 interface ClassRoom {
     class_id: number;
     class_name: string;
@@ -86,15 +85,16 @@ export const colorCode = (color: ColorType): string => {
 function page() {
     const [classRoomName, setClassRoomName] = useState("");
     const [classDescription, setClassDescription] = useState("");
+    const [classRooms, setClassRooms] = useState<ClassRoom[]>([]);
     const [classColor, setClassColor] = useState("rose");
     const [woring, setWoring] = useState("");
     const { data: session, status } = useSession();
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingGetRoom, setIsLoadingGetRoom] = useState(false);
-    const [classRooms, setClassRooms] = useState<ClassRoom[]>([]);
     const [userId, setUserID] = useState("");
     const ColorsEnum = Object.values(Colors);
-    const [selectedColor, setSelectedColor] = useState<ColorType>();
+
+
 
 
     useEffect(() => {
@@ -107,8 +107,7 @@ function page() {
         if (userId) {
             getClassRoom();
         }
-    }, [userId]);
-
+    }, [userId]); // เพิ่ม userId เป็น dependency
     const getClassRoom = async () => {
         try {
             setIsLoadingGetRoom(true);
@@ -116,6 +115,7 @@ function page() {
                 id: userId,
             });
             setClassRooms(response.data.getClassRoom);
+
             if (response.status === 200) {
                 setIsLoadingGetRoom(false)
 
@@ -207,7 +207,7 @@ function page() {
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>Created Classroom</AlertDialogTitle>
                                     <AlertDialogDescription></AlertDialogDescription>
-                                    <div>
+                                    <div className='text-left'>
                                         <form className='grid gap-4'>
                                             <div>
                                                 <label htmlFor="roomname">Class Name</label>
@@ -218,7 +218,31 @@ function page() {
                                                     <input onChange={(event) => { setClassRoomName(event.target.value) }} className='rounded-r-sm pl-2 outline-0 border-b-2 border-primary/30 w-full' type="text" name="roomname" id="roomname" placeholder='class room name' />
                                                 </div>
                                             </div>
-                                            <SelectColors onValueChange={(color) => {setClassColor(color)}} />
+                                            <div>
+                                                <p>Color</p>
+                                                <div className='flex'>
+                                                    <div className='bg-primary/20 p-1 rounded-l-sm text-primary/60'>
+                                                        <Palette size={28} />
+                                                    </div>
+                                                    <Select onValueChange={setClassColor}>
+                                                        <SelectTrigger className="w-full">
+                                                            <SelectValue placeholder="Select a Color" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {ColorsEnum.map((color) => (
+                                                                <SelectItem key={color} value={color}>
+                                                                    <div className='flex gap-2 items-center'>
+                                                                        {/* ใช้ฟังก์ชัน colorCode ในการแปลงสี */}
+                                                                        <div className={`w-[40px] h-[20px] rounded-lg ${colorCode(color as ColorType)}`} />
+                                                                        {/* แสดงชื่อสีโดยทำให้ตัวแรกเป็นตัวใหญ่ */}
+                                                                        {color.charAt(0).toUpperCase() + color.slice(1)}
+                                                                    </div>
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </div>
                                             <div>
                                                 <label htmlFor="classDescription">Class Description</label>
                                                 <div className='flex'>
@@ -249,9 +273,6 @@ function page() {
 
 
                 <div className='ml-3 mr-3 mb-5 mt-10 flex flex-wrap'>
-
-
-
                     <AlertDialog open={isLoadingGetRoom} onOpenChange={setIsLoading}>
                         <AlertDialogContent>
                             <AlertDialogHeader>
@@ -263,23 +284,19 @@ function page() {
                             </AlertDialogHeader>
                         </AlertDialogContent>
                     </AlertDialog>
-
                     {
                         Array.isArray(classRooms) && classRooms.map((room) => (
                             <div key={room.class_id}>
-                                <ClassRoomCard
+                                <ClassRoomCardDashBoard
                                     classId={room.class_id}
                                     Name={room.class_name} // ใช้ class_name จากข้อมูล
                                     Description={room.description} // ใช้ description จากข้อมูล
                                     Color={room.colors}
                                     Icon={room.subject_type}
-                                    onClickCard={() => { console.log("onClickCard") }}
                                 />
                             </div>
                         ))
                     }
-
-
                 </div>
 
             </div>

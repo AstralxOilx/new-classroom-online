@@ -31,6 +31,8 @@ import {
     BreadcrumbLink,
     BreadcrumbList,
 } from "@/components/ui/breadcrumb";
+import { Suspense } from 'react';
+import Loading from "./loading";
 
 export default function Layout({
     children, // will be a page or nested layout
@@ -70,7 +72,7 @@ export default function Layout({
             <div className="relative">
 
                 {isScreenSmall ? (//navในส่วน mobile
-                    <nav className="fixed top-0 left-0 right-0 flex items-center justify-between p-5 bg-background h-[60px] w-full border-solid border-b border-primary/15 ">
+                    <nav className=" z-50 fixed top-0 left-0 right-0 flex items-center justify-between p-5 bg-background h-[60px] w-full border-solid border-b border-primary/15 ">
                         <div className="flex justify-between  w-full">
                             <div className="flex gap-2">
                                 <Sheet key="left">
@@ -122,7 +124,7 @@ export default function Layout({
                         </div>
                     </nav >
                 ) : ( //navในส่วน desktop
-                    <nav className="fixed top-0 left-0 right-0 flex items-center justify-between p-5 bg-background h-[60px] w-full border-solid border-b border-primary/15">
+                    <nav className="z-50 fixed top-0 left-0 right-0 flex items-center justify-between p-5 bg-background h-[60px] w-full border-solid border-b border-primary/15">
                         <div className="w-[50px] h-[50px] bg-primary/10">
                         </div>
                         <div className="flex space-x-2">
@@ -161,13 +163,13 @@ export default function Layout({
                         </div>
                     </nav >
                 )}
-                <div className="w-full mt-14 pt-2 bg-primary/5 border-b-2 border-primary/10 fixed top-0 left-0 right-0 flex items-center justify-center">
+                <div className="z-40 mt-14 w-full pt-2 bg-primary/5 border-b-2 border-primary/10 fixed top-0 left-0 right-0 flex items-center justify-center">
                     <div className="p-1">
-                        <Breadcrumb>
-                            <BreadcrumbList>
+                        <Breadcrumb >
+                            <BreadcrumbList className="w-[300px]">
                                 <BreadcrumbItem>
                                     <BreadcrumbLink href="/dashboard">
-                                        <div className="grid justify-items-center place-content-center">
+                                        <div className="grid justify-items-center place-content-center hover:scale-105 transition-transform duration-300">
                                             <LayoutGrid className="text-primary" size={25} />
                                             <p className="text-sm">Dashboard</p>
                                         </div>
@@ -176,7 +178,7 @@ export default function Layout({
                                 <div className="border-l-4 border-primary/50 h-8"></div>
                                 <BreadcrumbItem>
                                     <BreadcrumbLink href="/classroom">
-                                        <div className="grid justify-items-center place-content-center">
+                                        <div className="grid justify-items-center place-content-center hover:scale-105 transition-transform duration-300">
                                             <School className="text-primary" size={25}/>
                                             <p className="text-sm">ClassRoom</p>
                                         </div>
@@ -185,7 +187,7 @@ export default function Layout({
                                 <div className="border-l-4 border-primary/50 h-8"></div>
                                 <BreadcrumbItem>
                                     <BreadcrumbLink href="/notification">
-                                        <div className="grid justify-items-center place-content-center">
+                                        <div className="grid justify-items-center place-content-center hover:scale-105 transition-transform duration-300">
                                             <Bell className="text-primary" size={25}/>
                                             <p className="text-sm">Notification</p>
                                         </div>
@@ -195,11 +197,12 @@ export default function Layout({
                         </Breadcrumb>
                     </div>
                 </div>
+                <Suspense fallback={ <Loading/>}>
                 <div className="mt-[7.5rem] pb-4">
                     {children}
                     <Toaster />
                 </div>
-
+                </Suspense>
             </div >
         )
     )

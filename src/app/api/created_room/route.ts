@@ -1,9 +1,12 @@
 import { db } from '@/lib/db';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: Request) {
     try {
-        const { id, className, classDescription } = await request.json();
+        const { id, className, classDescription ,color} = await request.json();
+
         const userIdInt = parseInt(id, 10);
+        const classroomCode =  uuidv4();
         const user = await db.users.findUnique({
             where: { user_id: userIdInt },
         });
@@ -12,11 +15,14 @@ export async function POST(request: Request) {
             if (user.role === 'teacher'){
                 try {
                     const newClassRoom = await db.classRoom.create({
-                        data: {
-                            class_name:className,
+                        data:{
                             teacher_id:userIdInt,
+                            class_name:className,
                             description:classDescription,
-                        },
+                            code:classroomCode,
+                            colors:color
+                        }
+                    
                     });
                     return Response.json({
                         message: 'Classroom created successfully!',
@@ -37,12 +43,7 @@ export async function POST(request: Request) {
 
         return Response.json({
             message: 'User created successfully!',
-            data: {
-                id,
-                className,
-                classDescription
-            }
-        })
+        },{ status: 200 });
 
     } catch (error) {
         console.error('Error fetching user:', error);
