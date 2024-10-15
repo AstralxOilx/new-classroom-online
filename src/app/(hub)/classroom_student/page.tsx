@@ -152,7 +152,7 @@ function page() {
 
                         <AlertDialog>
                             <AlertDialogTrigger className='flex gap-2 bg-primary p-2 font-bold text-secondary rounded-sm hover:scale-105 transition-transform duration-300'><SquarePlus />
-                                Joined Classroom
+                                Joined Room
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                                 <AlertDialogHeader>

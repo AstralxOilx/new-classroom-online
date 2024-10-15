@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,186 +8,240 @@ datasource db {
 }
 
 model Users {
-  user_id    Int       @id @default(autoincrement())
-  user_name  String    @db.VarChar(50)
-  email      String    @unique @db.VarChar(100)
-  password   String    @db.VarChar(255)
-  role       Role       
-  status     Status    @default(pending)
-  created_at DateTime  @default(now()) @db.Timestamptz
-  updated_at DateTime  @updatedAt @db.Timestamptz
-  last_login DateTime? @db.Timestamptz
+  user_id            Int                @id @default(autoincrement())
+  user_name          String             @db.VarChar(50) @unique
+  email              String             @unique @db.VarChar(100)
+  password           String             @db.VarChar(255)
+  role_id            Int
+  status_id          Int                @default(1) // default to pending
+  created_at         DateTime           @default(now()) @db.Timestamptz
+  updated_at         DateTime           @updatedAt @db.Timestamptz
+  last_login         DateTime?          @db.Timestamptz
 
-  classrooms ClassRoom[]
-  messages   ChatMessage[]
-  notifications Notification[]
-  assignments Assignment[]
-  submissions Submission[]
-  streams    Stream[]
-  classroomStudents ClassroomStudent[]
+  classrooms         ClassRoom[]
+  messages           ChatMessage[]
+  notifications      Notification[]
+  assignments        Assignment[]
+  submissions        Submission[]
+  streams            Stream[]
+  classroomStudents   ClassroomStudent[]
+  attendances        Attendance[]
+  streamAttendances   StreamAttendance[]
+
+  role               Role               @relation(fields: [role_id], references: [role_id])
+  status             Status             @relation(fields: [status_id], references: [status_id])
 }
 
 model ClassRoom {
-  class_id    Int       @id @default(autoincrement())
-  class_name  String    @db.VarChar(30)
-  teacher_id  Int
-  description String    @db.VarChar(100)
-  code String @unique
-  colors Colors @default(rose)
-  subject Subject @default(Other)
-  subject_type SubjectType @default(Other)
-  permission  Status    @default(pending)
-  created_at  DateTime  @default(now()) @db.Timestamptz
-  updated_at  DateTime  @updatedAt @db.Timestamptz
+  class_id           Int                @id @default(autoincrement())
+  class_name         String             @db.VarChar(30)
+  teacher_id         Int
+  description        String             @db.VarChar(100)
+  code               String             @unique
+  color_id           Int                @default(1) // default to rose
+  subject_id         Int                @default(1) // default to Other
+  subject_type_id    Int                @default(1) // default to Other
+  permission_id      Int                @default(1) // default to pending
+  created_at         DateTime           @default(now()) @db.Timestamptz
+  updated_at         DateTime           @updatedAt @db.Timestamptz
 
-  teacher      Users     @relation(fields: [teacher_id], references: [user_id], onDelete: Cascade)
-  students     ClassroomStudent[]
-  assignments  Assignment[]
-  streams      Stream[]
-  messages     ChatMessage[]
+  teacher            Users              @relation(fields: [teacher_id], references: [user_id])
+  students           ClassroomStudent[]
+  assignments        Assignment[]
+  streams            Stream[]
+  messages           ChatMessage[]
+  attendances        Attendance[]
+
+  color              Colors             @relation(fields: [color_id], references: [color_id])
+  subject            Subject            @relation(fields: [subject_id], references: [subject_id])
+  subject_type       SubjectType        @relation(fields: [subject_type_id], references: [subject_type_id])
+  permission         Status             @relation(fields: [permission_id], references: [status_id])
 }
 
 model ClassroomStudent {
-  id        Int      @id @default(autoincrement())
-  class_id  Int
-  student_id Int
-  status     Status    @default(pending)
-  joined_at DateTime @default(now()) @db.Timestamptz
+  id            Int        @id @default(autoincrement())
+  class_id      Int
+  student_id    Int
+  status_id     Int        @default(1) // default to pending
+  position_id   Int        @default(1) // default to Student
+  joined_at     DateTime   @default(now()) @db.Timestamptz
 
-  classRoom ClassRoom @relation(fields: [class_id], references: [class_id], onDelete: Cascade)
-  student   Users     @relation(fields: [student_id], references: [user_id], onDelete: Cascade)
+  classRoom     ClassRoom  @relation(fields: [class_id], references: [class_id])
+  student       Users      @relation(fields: [student_id], references: [user_id])
+  status        Status     @relation(fields: [status_id], references: [status_id])
+  position      Position   @relation(fields: [position_id], references: [position_id])
+
+  @@index([class_id, student_id])
 }
 
-model Assignment {
-  assignment_id Int      @id @default(autoincrement())
-  class_id      Int
-  teacher_id    Int
-  title         String   @db.VarChar(255)
-  description   String?
-  due_date      DateTime?
-  created_at    DateTime @default(now()) @db.Timestamptz
-  updated_at    DateTime @updatedAt @db.Timestamptz
 
-  classRoom ClassRoom @relation(fields: [class_id], references: [class_id], onDelete: Cascade)
-  teacher   Users      @relation(fields: [teacher_id], references: [user_id], onDelete: Cascade)
-  submissions Submission[]
+model Assignment {
+  assignment_id      Int                @id @default(autoincrement())
+  class_id           Int
+  teacher_id         Int
+  title              String             @db.VarChar(255)
+  description        String?
+  due_date           DateTime?
+  max_score          Float?
+  created_at         DateTime           @default(now()) @db.Timestamptz
+  updated_at         DateTime           @updatedAt @db.Timestamptz
+
+  classRoom          ClassRoom          @relation(fields: [class_id], references: [class_id])
+  teacher            Users              @relation(fields: [teacher_id], references: [user_id])
+  submissions        Submission[]
+
+  @@index([class_id, teacher_id])
 }
 
 model Submission {
-  submission_id  Int      @id @default(autoincrement())
-  assignment_id  Int
-  student_id     Int
-  submission_file String?
-  submitted_at   DateTime @default(now()) @db.Timestamptz
-  score          Float?
+  submission_id      Int                @id @default(autoincrement())
+  assignment_id      Int
+  student_id         Int
+  submitted_at       DateTime           @default(now()) @db.Timestamptz
+  score              Float?
+  feedback           String?
 
-  assignment Assignment @relation(fields: [assignment_id], references: [assignment_id], onDelete: Cascade)
-  student    Users       @relation(fields: [student_id], references: [user_id], onDelete: Cascade)
+  assignment         Assignment          @relation(fields: [assignment_id], references: [assignment_id])
+  student            Users               @relation(fields: [student_id], references: [user_id])
+  files              SubmissionFile[]
+
+  @@index([assignment_id, student_id])
+}
+
+model SubmissionFile {
+  id                 Int                @id @default(autoincrement())
+  submission_id      Int
+  file_url           String             @db.VarChar(255)
+  created_at         DateTime           @default(now()) @db.Timestamptz
+
+  submission         Submission         @relation(fields: [submission_id], references: [submission_id])
 }
 
 model Stream {
-  stream_id   Int      @id @default(autoincrement())
-  class_id    Int
-  teacher_id  Int
-  stream_url  String   @db.VarChar(255)
-  start_time  DateTime
-  end_time    DateTime?
+  stream_id          Int                @id @default(autoincrement())
+  class_id           Int
+  teacher_id         Int
+  stream_url         String             @db.VarChar(255)
+  start_time         DateTime
+  end_time           DateTime?
 
-  classRoom ClassRoom @relation(fields: [class_id], references: [class_id], onDelete: Cascade)
-  teacher   Users      @relation(fields: [teacher_id], references: [user_id], onDelete: Cascade)
+  classRoom          ClassRoom          @relation(fields: [class_id], references: [class_id])
+  teacher            Users               @relation(fields: [teacher_id], references: [user_id])
+  attendances        StreamAttendance[]
+
+  @@index([class_id, teacher_id])
+}
+
+model StreamAttendance {
+  id                 Int                @id @default(autoincrement())
+  stream_id          Int
+  user_id            Int
+  joined_at          DateTime           @default(now()) @db.Timestamptz
+  left_at            DateTime?          @db.Timestamptz
+
+  stream             Stream             @relation(fields: [stream_id], references: [stream_id])
+  user               Users              @relation(fields: [user_id], references: [user_id])
+
+  @@index([stream_id, user_id])
 }
 
 model ChatMessage {
-  message_id Int      @id @default(autoincrement())
-  class_id   Int
-  sender_id  Int
-  message    String   @db.Text
-  sent_at    DateTime @default(now()) @db.Timestamptz
+  message_id         Int                @id @default(autoincrement())
+  class_id           Int
+  sender_id          Int
+  message            String             @db.Text
+  sent_at            DateTime           @default(now()) @db.Timestamptz
 
-  classRoom ClassRoom @relation(fields: [class_id], references: [class_id], onDelete: Cascade)
-  sender    Users      @relation(fields: [sender_id], references: [user_id], onDelete: Cascade)
+  classRoom          ClassRoom          @relation(fields: [class_id], references: [class_id])
+  sender             Users              @relation(fields: [sender_id], references: [user_id])
+
+  @@index([class_id, sender_id])
 }
 
 model Notification {
-  notification_id Int      @id @default(autoincrement())
-  user_id         Int
-  message         String   @db.Text
-  is_read         Boolean  @default(false)
-  created_at      DateTime @default(now()) @db.Timestamptz
+  notification_id     Int                @id @default(autoincrement())
+  user_id             Int
+  message             String             @db.Text
+  is_read             Boolean            @default(false)
+  created_at          DateTime           @default(now()) @db.Timestamptz
+  updated_at          DateTime           @updatedAt @db.Timestamptz
+  type_id             Int                @default(1) // default to Generic
 
-  user Users @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  user               Users               @relation(fields: [user_id], references: [user_id])
+  type               NotificationType    @relation(fields: [type_id], references: [type_id])
+
+  @@index([user_id])
 }
 
-enum Role {
-  student
-  teacher
+model Role {
+  role_id           Int                @id @default(autoincrement())
+  role_name         String             @unique @db.VarChar(50)
+
+  users             Users[]
 }
 
-enum Status {
-  pending
-  active
-  inactive
+model Attendance {
+  attendance_id      Int                @id @default(autoincrement())
+  class_id           Int
+  student_id         Int
+  date               DateTime           @default(now()) @db.Timestamptz
+  status_id          Int                @default(3) // default to absent
+
+  classRoom          ClassRoom          @relation(fields: [class_id], references: [class_id])
+  student            Users              @relation(fields: [student_id], references: [user_id])
+  status             AttendanceStatus    @relation(fields: [status_id], references: [status_id])
+
+  @@index([class_id, student_id])
 }
 
+model AttendanceStatus {
+  status_id          Int                @id @default(autoincrement())
+  status_name        String             @unique @db.VarChar(50)
 
-enum Subject {
-  ThaiLanguage
-  EnglishLanguage
-  ChineseLanguage
-  JapaneseLanguage
-  FrenchLanguage
-  Mathematics
-  Physics
-  Chemistry
-  Biology
-  EnglishLiterature
-  History
-  Geography
-  ComputerScience
-  Economics
-  BusinessStudies
-  Psychology
-  Sociology
-  Philosophy
-  ArtandDesign
-  Music
-  PhysicalEducation
-  PoliticalScience
-  EnvironmentalScience
-  Engineering
-  InformationTechnology
-  Other
+  attendances        Attendance[]       // No need for @relation name; Prisma infers it
 }
 
+model Status {
+  status_id          Int                @id @default(autoincrement())
+  status_name        String             @unique @db.VarChar(50)
 
-enum SubjectType {
-  Linguistics
-  MathematicsAndScience
-  SocialSciences
-  ArtsAndDesign
-  OccupationalAndTechnologyStudies
-  HealthAndPhysicalEducation
-  BusinessAndEconomics
-  Other
+  users              Users[]            // Relationship with Users
+  classroomStudents   ClassroomStudent[] // Relationship with ClassroomStudent
+  classrooms         ClassRoom[]        // Relationship with ClassRoom
 }
 
-enum Colors {
-  gray
-  orange
-  amber
-  yellow
-  lime
-  green
-  emerald
-  teal
-  cyan
-  sky
-  blue
-  indigo
-  violet
-  purple
-  fuchsia
-  pink
-  rose
-  red
+model Subject {
+  subject_id         Int                @id @default(autoincrement())
+  subject_name       String             @unique @db.VarChar(100)
+
+  classrooms         ClassRoom[]
 }
+
+model SubjectType {
+  subject_type_id    Int                @id @default(autoincrement())
+  subject_type_name  String             @unique @db.VarChar(100)
+
+  classrooms         ClassRoom[]
+}
+
+model Colors {
+  color_id           Int                @id @default(autoincrement())
+  color_name         String             @unique @db.VarChar(50)
+
+  classrooms         ClassRoom[]
+}
+
+model NotificationType {
+  type_id            Int                @id @default(autoincrement())
+  type_name          String             @unique @db.VarChar(50)
+
+  notifications      Notification[]
+}
+
+model Position {
+  position_id   Int        @id @default(autoincrement())
+  position_name String     @unique @db.VarChar(50)
+  
+  classroomStudents ClassroomStudent[]
+}
+
