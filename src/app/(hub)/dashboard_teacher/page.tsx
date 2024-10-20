@@ -1,293 +1,325 @@
-"use client";
-
-import React from 'react';
-import { useState, useEffect } from "react";
+"use client"
+import React, { useState, useEffect } from 'react';
+import { useSession } from "next-auth/react";
+import { Share2, Clipboard, X, Settings } from "lucide-react";
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { SquarePlus, School, LoaderCircle, Share2, Clipboard, X } from "lucide-react";
 import { toast } from "sonner";
 import axios from 'axios';
-import { useSession } from "next-auth/react";
-import { ClassRoomCard, ClassRoomCardDashBoard } from "@/components/ui/card-classroom";
-import { SelectSubjectTypes } from "@/components/ui/select-subjectType";
-import { SelectSubject } from "@/components/ui/select-subject";
-import { SelectedStatus } from "@/components/ui/selsect-status";
-import { SelectColors } from '@/components/ui/select-colors';
+import InputField from '@/components/ui/input-field';
+import SubjectTypeSelect from '@/components/ui/select-subjectType';
+import ColorSelect from '@/components/ui/select-colors';
+import StuatusSelect from '@/components/ui/select-status';
+import SubjectSelect from '@/components/ui/select-subject';
+import TextAreaField from '@/components/ui/text-area';
+import CradDashBoard from '@/components/ui/crad-dashboard';
+import { classroomType } from '@/types/classroom-type';
 import { Button } from '@/components/ui/button';
 
+export default function page() {
+  const { data: session, status } = useSession()
+  const [resource] = useState("teacher_classroom");
+  const [teacherClassroom, setTeacherClassroom] = useState<classroomType[]>([]);
+  const [userID, setUserID] = useState("");
+  const [email, setEmail] = useState("");
+  const [isShare, setIsShare] = useState(false);
+  const [isSetting, setIsSetting] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [selectedCrad, setSelectedCrad] = useState<number>();
+  const [selectedShare, setSelectedShare] = useState('');
+  const [inputData, setInputData] = useState({
+    className: '',
+    description: '',
+    color: '',
+    stuatus: '',
+    subject: '',
+    subjectType: '',
+  });
 
-interface ClassRoom {
-    class_id: number;
-    class_name: string;
-    description: string;
-    colors: string;
-    subject_type: string;
-    code: string;
-    userCount:string;
-    // สามารถเพิ่มฟิลด์อื่น ๆ ตามที่คุณมีได้
-}
-
-
-function page() {
-    const [classRoomName, setClassRoomName] = useState("");
-    const [classDescription, setClassDescription] = useState("");
-    const [classRooms, setClassRooms] = useState<ClassRoom[]>([]);
-    const [classColor, setClassColor] = useState("rose");
-    const [classType, setClassType] = useState("Other");
-    const [classSubject, setClassSubject] = useState("Other");
-    const [classPermission, setClassPermission] = useState("pending");
-    const [classCode, setClassCode] = useState("pending");
-    const [woring, setWoring] = useState("");
-    const { data: session, status } = useSession();
-    const [isLoading, setIsLoading] = useState(false);
-    const [isLoadingGetRoom, setIsLoadingGetRoom] = useState(false);
-    const [isShare, setIsShare] = useState(false);
-    const [userId, setUserID] = useState("");
-    const [copied, setCopied] = useState(false);
-
-
-
-    useEffect(() => {
-        if (session) {
-            setUserID(session.user.id);
-        }
-    }, [session]);
-
-    useEffect(() => {
-        if (userId) {
-            getClassRoom();
-        }
-    }, [userId]); // เพิ่ม userId เป็น dependency
-    const getClassRoom = async () => {
-        try {
-            setIsLoadingGetRoom(true);
-            const response = await axios.post('http://localhost:3000/api/get_teacher_room', {
-                id: userId,
-            });
-            setClassRooms(response.data.classRooms);
-
-            if (response.status === 200) {
-                setIsLoadingGetRoom(false)
-
-            };
-
-
-        } catch (error) {
-            console.error('Error fetching class room:', error);
-
-        } finally {
-
-        }
+  useEffect(() => {
+    if (session) {
+      setUserID(session.user.id);
+      setEmail(session.user.email);
     }
-    const createRoom = async () => {
-        if (classRoomName !== "") {
-            try {
-                setIsLoading(true);
-                const response = await axios.post('http://localhost:3000/api/created_room', {
-                    id: session?.user.id,
-                    className: classRoomName,
-                    classDescription: classDescription,
-                    color: classColor,
-                    type: classType,
-                    permission: classPermission,
-                    subject: classSubject
-                });
-                getClassRoom();
+  }, [session]);
 
-                toast("Classroom created successfully! " + classRoomName, {
-                    description: classRoomName,
-                    action: {
-                        label: "X",
-                        onClick: () => console.log("Undo"),
-                    },
-                    className: "text-green-500 shadow-lg p-4 rounded-lg", // เพิ่มสไตล์ที่นี่
-                    duration: 5000, // กำหนดเวลาที่ toast จะแสดง (5000ms = 5 วินาที)
-                });
+  useEffect(() => {
+    if (userID) {
+      getClassRoom();
+    }
+  }, [userID, email]);
 
-            } catch (error: unknown) {
-                toast("Error Event has been created Name: ", {
-                    description: "Unauthorized: Only teachers can create classrooms.",
-                    action: {
-                        label: "X",
-                        onClick: () => console.log("Undo"),
-                    },
-                    className: "text-red-500 shadow-lg p-4 rounded-lg shadow-lg", // เพิ่มสไตล์ที่นี่
-                    duration: 5000, // กำหนดเวลาที่ toast จะแสดง (5000ms = 5 วินาที)
-                });
-            } finally {
-                setIsLoading(false);
-                setClassRoomName("");
-                setClassDescription("");
-            }
+  // ใช้ฟังก์ชันเดียวในการจัดการอินพุตทุกฟิลด์
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setInputData((prevData) => ({
+      ...prevData,
+      [name]: value, // อัปเดตตาม name ของฟิลด์ที่กำลังเปลี่ยน
+    }));
+  };
 
-        } else {
-            toast("Error Event has been created Name: ", {
-                description: "Please fill in all the required fields.",
-                action: {
-                    label: "X",
-                    onClick: () => console.log("Undo"),
-                },
-                className: "text-red-500 shadow-lg p-4 rounded-lg shadow-lg",
-                duration: 5000, // กำหนดเวลาที่ toast จะแสดง (5000ms = 5 วินาที)
-            });
-        }
+
+  const getClassRoom = async () => {
+    try {
+      const response = await axios.get(`http://localhost:3000/api/get_resource?resource=${resource}&user_id=${userID}`);
+      setTeacherClassroom(response.data.classrooms);
+
+    } catch (error) {
+      console.error('Error fetching class room:', error);
+
+    } finally {
+
+    }
+  }
+
+  const handleDialogCreated = async () => {
+    const { className, description, color, stuatus, subject, subjectType } = inputData;
+    if (className) {
+      try {
+        const response = await axios.post('http://localhost:3000/api/created_classroom', {
+          userID: userID,
+          email,
+          className,
+          description,
+          color: color,
+          roomStuatus: stuatus,
+          subject,
+          subjectType,
+        });
+        toast("Classroom created successfully!", {
+          description: className,
+          action: {
+            label: "X",
+            onClick: () => console.log("X"),
+          },
+          className: "text-green-500 shadow-lg p-4 rounded-lg", // เพิ่มสไตล์ที่นี่
+          duration: 5000, // กำหนดเวลาที่ toast จะแสดง (5000ms = 5 วินาที)
+        });
+      } catch (error) {
+        toast("Error Event has been created Name: ", {
+          description: "Unauthorized: Only teachers can create classrooms.",
+          action: {
+            label: "X",
+            onClick: () => console.log("X"),
+          },
+          className: "text-red-500 shadow-lg p-4 rounded-lg shadow-lg", // เพิ่มสไตล์ที่นี่
+          duration: 5000, // กำหนดเวลาที่ toast จะแสดง (5000ms = 5 วินาที)
+        });
+      } finally {
+        getClassRoom();
+      }
+    } else {
+      toast("Error Event has been created Name: ", {
+        description: "Invalid Class Name",
+        action: {
+          label: "X",
+          onClick: () => console.log("X"),
+        },
+        className: "text-red-500 shadow-lg p-4 rounded-lg shadow-lg",
+        duration: 5000, // กำหนดเวลาที่ toast จะแสดง (5000ms = 5 วินาที)
+      });
     }
 
+  }
 
-    const handleCopy = () => {
-        navigator.clipboard.writeText(classCode);
-        setCopied(true); // แสดงข้อความว่าคัดลอกสำเร็จ
-        setTimeout(() => setCopied(false), 3000); 
-    };
-    return (
-        <>
-            <div className='grid gap-2 relative'>
+  const handleDialogCancel = () => {
+    setInputData({
+      className: '',
+      description: '',
+      color: '',
+      stuatus: '',
+      subject: '',
+      subjectType: '',
+    })
+  }
 
-                <AlertDialog open={isLoading} onOpenChange={setIsLoading}>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Classroom created....</AlertDialogTitle>
-                            <AlertDialogDescription className='flex gap-2'>
-                                <LoaderCircle size={30} className='animate-spin' />
-                                <span>Currently Classroom created. Please wait...</span>
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                    </AlertDialogContent>
-                </AlertDialog>
-                <div className="flex justify-center items-center bg-primary/5 h-[2rem] w-full fixed top-30">
-                    <p className='text-lg font-bold text-primary/60  '>Dashboard</p>
+  const handleCradClassRoomChange = (newCrad: number) => {
+    setSelectedCrad(newCrad); // อัปเดต state ด้วย number
+    console.log('Selected Crad:', newCrad); // ลองพิมพ์ค่าเพื่อดูผล
+  };
+  const handleShareClassRoomChange = (share: string) => {
+    setSelectedShare(share); // อัปเดต state ด้วย number
+    setIsShare(true);
+  };
+  const handleCopy = () => {
+    navigator.clipboard.writeText(selectedShare);
+    setCopied(true); // แสดงข้อความว่าคัดลอกสำเร็จ
+    setTimeout(() => setCopied(false), 3000);
+  };
+  const handleSettingClassRoomChange = (share: string) => {
+    console.log(share); // ตรวจสอบว่า share มีค่า
+    setIsSetting(true);
+  };
+
+  return (
+    <>
+      <div className='grid gap-2 relative mt-10'>
+        <div className="flex p-1 items-center justify-center bg-primary/5  w-full fixed top-32">
+          <p className='text-lg font-bold text-primary/60 '>Dashboard</p>
+        </div>
+
+        <div className="flex items-center justify-center bg-primary/5 fixed top-40 right-3">
+          <AlertDialog>
+            <AlertDialogTrigger className='p-2 rounded-sm bg-primary text-secondary hover:scale-105 transition-transform duration-200'>Created Classroom</AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Created Classroom?</AlertDialogTitle>
+                <AlertDialogDescription></AlertDialogDescription>
+                <div className='grid gap-1'>
+                  <InputField
+                    onInputChange={(data) => handleInputChange({ target: { name: 'className', value: data } } as React.ChangeEvent<HTMLInputElement>)}
+                    type='text'
+                    icon='school'
+                    label='Classroom Name'
+                    name='className'
+                    description=''
+                    placeholder='Add a classroom name.'
+                    value={inputData.className}
+                  />
+                  <TextAreaField
+                    onInputChange={(data) => handleInputChange({ target: { name: 'description', value: data } } as React.ChangeEvent<HTMLTextAreaElement>)}
+                    value={inputData.description}
+                    icon='textArea'
+                    label='Description'
+                    name='description'
+                    placeholder='description'
+                  />
+                  <ColorSelect
+                    onColorChange={(data) => handleInputChange({ target: { name: 'color', value: data } } as React.ChangeEvent<HTMLSelectElement>)}
+                    value={inputData.color}
+                  />
+                  <StuatusSelect
+                    onStatusChange={(data) => handleInputChange({ target: { name: 'stuatus', value: data } } as React.ChangeEvent<HTMLSelectElement>)}
+                    value={inputData.stuatus}
+                  />
+                  <SubjectTypeSelect
+                    onSubjectTypeChange={(data) => handleInputChange({ target: { name: 'subjectType', value: data } } as React.ChangeEvent<HTMLSelectElement>)}
+                    value={inputData.subjectType}
+                  />
+                  <SubjectSelect
+                    onSubjectChange={(data) => handleInputChange({ target: { name: 'subject', value: data } } as React.ChangeEvent<HTMLSelectElement>)}
+                    value={inputData.subject}
+                  />
                 </div>
-                <div className='z-40 grid gap-2 w-full fixed top-40 right-0'>
-                    <div className='flex justify-end mr-2'>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={handleDialogCancel}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDialogCreated}>Created</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
 
-                        <AlertDialog>
-                            <AlertDialogTrigger className='flex gap-2 bg-primary p-2 font-bold text-secondary rounded-sm hover:scale-105 transition-transform duration-300'><SquarePlus />Created Room</AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Created Classroom</AlertDialogTitle>
-                                    <AlertDialogDescription></AlertDialogDescription>
-                                    <div className='text-left'>
-                                        <form className='grid gap-4'>
-                                            <div>
-                                                <label htmlFor="roomname">Class Name</label>
-                                                <div className='flex'>
-                                                    <div className='bg-primary/20 p-1 rounded-l-sm text-primary/60'>
-                                                        <School size={28} />
-                                                    </div>
-                                                    <input onChange={(event) => { setClassRoomName(event.target.value) }} className='rounded-r-sm pl-2 outline-0 border-b-2 border-primary/30 w-full' type="text" name="roomname" id="roomname" placeholder='class room name' />
-                                                </div>
-                                            </div>
-                                            <SelectColors onValueChange={(color) => { setClassColor(color) }} />
-                                            <SelectedStatus message='Permission' onValueChange={(type) => { setClassPermission(type) }} />
-                                            <SelectSubjectTypes onValueChange={(type) => { setClassType(type) }} />
-                                            <SelectSubject onValueChange={(type) => { setClassSubject(type) }} />
-                                            <div>
-                                                <label htmlFor="classDescription">Class Description</label>
-                                                <div className='flex'>
-                                                    <div className='bg-primary/20 p-1 rounded-l-sm text-primary/60'>
-                                                        <School size={28} />
-                                                    </div>
-                                                    <textarea
-                                                        onChange={(event) => { setClassDescription(event.target.value) }}
-                                                        className='rounded-r-sm pl-2 outline-0 border-b-2 border-primary/30 w-full h-16 custom-textarea text-base font-medium'
-                                                        name="classDescription"
-                                                        id="classDescription"
-                                                        placeholder='Enter class description'
-                                                    />
+        <AlertDialog open={isShare}>
+          <AlertDialogContent>
+            <AlertDialogHeader className='w-full'>
+              <AlertDialogTitle className='flex gap-2'>
+                <Share2 size={25} />
+                <p>
+                  Share Classroom
+                </p>
+              </AlertDialogTitle>
+              {copied && <span className="text-green-600">
+                Successfully copied!
+              </span>}
+              <AlertDialogDescription className='grid gap-2 items-center w-full'>
+                <span className="pt-2 pb-2 pl-1 pr-1 w-full rounded-md overflow-x-auto bg-primary/5 border-2 overflow-hidden whitespace-nowrap">
+                  <span className="animate-slide scroll-ml-6 snap-start">
+                    {selectedShare}
+                  </span>
+                </span>
+                <Button
+                  className='border-2'
+                  variant={"ghost"}
+                  size={"default"}
+                  onClick={handleCopy} >
+                  <Clipboard size={25} /><span>Copy</span>
+                </Button>
+                <Button
+                  className='border-2'
+                  variant={"ghost"}
+                  size={"default"}
+                  onClick={() => { setIsShare(false) }} >
+                  <X size={25} />
+                  <span>Colse</span>
+                </Button>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
-                                                </div>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={createRoom}>Created</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </div>
-                </div>
-
-
-                <div className='ml-3 mr-3 mb-5 mt-10 flex flex-wrap'>
-                    <AlertDialog open={isLoadingGetRoom} onOpenChange={setIsLoading}>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Loading Classroom....</AlertDialogTitle>
-                                <AlertDialogDescription className='flex gap-2'>
-                                    <LoaderCircle size={30} className='animate-spin' />
-                                    <span>Currently Loading Classroom. Please wait...</span>
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                    <AlertDialog open={isShare}>
-                        <AlertDialogContent>
-                            <AlertDialogHeader className='w-full'>
-                                <AlertDialogTitle className='flex gap-2'>
-                                    <Share2 size={25} />
-                                    <p>
-                                        Share Classroom
-                                    </p>
-                                </AlertDialogTitle>
-                                {copied && <span className="text-green-600">
-                                    Successfully copied!
-                                </span>}
-                                <AlertDialogDescription className='flex gap-2 items-center w-full'>
-                                    <span className="pt-2 pb-2 pl-1 pr-1 w-[24rem] rounded-md overflow-x-auto bg-primary/5 border-2 overflow-hidden whitespace-nowrap">
-                                        <span className="animate-slide scroll-ml-6 snap-start">
-                                            {classCode}
-                                        </span>
-                                    </span>
-                                    <Button
-                                        className='border-2'
-                                        variant={"ghost"}
-                                        size={"sm"}
-                                        onClick={handleCopy} >
-                                        <Clipboard size={25} /><span>Copy</span>
-                                    </Button>
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogAction onClick={() => { setIsShare(false) }}>
-                                    <X size={25} />
-                                    <span>Colse</span>
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                    {
-                        Array.isArray(classRooms) && classRooms.map((room) => (
-                            <div key={room.class_id}>
-                                <ClassRoomCardDashBoard
-                                    classId={room.class_id}
-                                    Name={room.class_name} // ใช้ class_name จากข้อมูล
-                                    Description={room.description} // ใช้ description จากข้อมูล
-                                    Color={room.colors}
-                                    Icon={room.subject_type}
-                                    Code={room.code}
-                                    onClickShare={(type) => { setClassCode(type); setIsShare(true); }}
-                                    count={room.userCount}
-                                    status=''
-                                />
-                            </div>
-                        ))
-                    }
-                </div>
-
+        <AlertDialog open={isSetting}>
+          <AlertDialogContent className='bg-background max-w-lg w-full mx-auto'>
+            <div className='flex justify-between items-center p-2'>
+              <div className='flex gap-2 items-center'>
+                <Settings size={24} className='text-primary/80' />
+                <p className='font-bold text-lg'>Setting Classroom</p>
+              </div>
+              <Button
+                className='border-2'
+                variant={"secondary"}
+                size={"icon"}
+                onClick={() => { setIsSetting(false) }} >
+                <X size={20} />
+              </Button>
             </div>
-        </>
-    )
-}
+            <AlertDialogHeader>
+              <AlertDialogTitle className='text-sm'>
+                {/* เพิ่มชื่อที่นี่ถ้าต้องการ */}
+              </AlertDialogTitle>
+              <AlertDialogDescription className='text-xs'>
+                {/* เพิ่มคำอธิบายที่นี่ถ้าต้องการ */}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className='h-96 md:h-[25rem] lg:h-[35rem] overflow-y-auto'>
+              <div className='h-[100rem] w-32'>
+                {/* เนื้อหาของคุณ */}
+              </div>
+            </div>
+            <AlertDialogFooter className='p-2'>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
-export default page
+
+
+        <div className='mt-20 p-2 flex  flex-wrap gap-4'>
+          {
+            Array.isArray(teacherClassroom) && teacherClassroom.map((room) => (
+              <div key={room.class_id}>
+                <CradDashBoard
+                  onCradClassRoomChange={handleCradClassRoomChange}
+                  onShareClassRoomChange={handleShareClassRoomChange}
+                  onsetSettingClassRoomChange={handleSettingClassRoomChange}
+                  classId={room.class_id}
+                  className={room.class_name}
+                  color={room.color_name}
+                  subject={room.subject_name}
+                  status={room.permission_name}
+                  subjectType={room.subject_type_name}
+                  teacher_name={room.teacher_name}
+                  user_name={room.user_name}
+                  student_count={room.student_count} // จำนวนที่นับได้
+                  code={room.code}
+                />
+              </div>
+            ))
+          }
+
+        </div>
+
+      </div>
+    </>
+  )
+}

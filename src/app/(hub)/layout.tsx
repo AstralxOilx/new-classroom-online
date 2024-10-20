@@ -31,8 +31,8 @@ import {
     BreadcrumbLink,
     BreadcrumbList,
 } from "@/components/ui/breadcrumb";
-import { Suspense } from 'react';
-import Loading from "./loading";
+// import { Suspense } from 'react';
+// import Loading from "./loading";
 
 export default function Layout({
     children, // will be a page or nested layout
@@ -88,9 +88,7 @@ export default function Layout({
                                     <SheetContent side="left" className="w-[300px] sm:w-[400px]">
                                         <SheetHeader>
                                             <SheetTitle className="flex justify-center">
-                                                <div className="w-[50px] h-[50px] bg-primary/10">
-
-                                                </div>
+                                                <div className="w-[50px] h-[50px] bg-primary/10"></div>
                                             </SheetTitle>
                                             <SheetDescription className="grid gap-1"></SheetDescription>
                                         </SheetHeader>
@@ -124,7 +122,7 @@ export default function Layout({
                         </div>
                     </nav >
                 ) : ( //navในส่วน desktop
-                    <nav className="z-50 fixed top-0 left-0 right-0 flex items-center justify-between p-5 bg-background h-[60px] w-full border-solid border-b border-primary/15">
+                    <nav className="z-50 fixed top-0 left-0 right-0 flex items-center justify-between p-5 h-[60px] w-full bg-background border-solid border-b border-primary/15">
                         <div className="w-[50px] h-[50px] bg-primary/10">
                         </div>
                         <div className="flex space-x-2">
@@ -163,33 +161,33 @@ export default function Layout({
                         </div>
                     </nav >
                 )}
-                <div className="z-40 mt-14 w-full pt-2 bg-primary/5 border-b-2 border-primary/10 fixed top-0 left-0 right-0 flex items-center justify-center">
+                <div className="z-40 mt-14 w-full pt-2 bg-background border-b-2 border-primary/10 fixed top-0 left-0 right-0 flex items-center justify-center">
                     <div className="p-1">
                         <Breadcrumb >
-                            <BreadcrumbList className="w-[300px]">
+                            <BreadcrumbList className="">
                                 <BreadcrumbItem>
-                                    <BreadcrumbLink href="/dashboard">
+                                    <BreadcrumbLink href="/dashboard" className="bg-primary/10 p-1 border border-primary/20 rounded-md">
                                         <div className="grid justify-items-center place-content-center hover:scale-105 transition-transform duration-300">
                                             <LayoutGrid className="text-primary" size={25} />
-                                            <p className="text-sm">Dashboard</p>
+                                            <p className="text-sm font-bold">Dashboard</p>
                                         </div>
                                     </BreadcrumbLink>
                                 </BreadcrumbItem>
                                 <div className="border-l-4 border-primary/50 h-8"></div>
                                 <BreadcrumbItem>
-                                    <BreadcrumbLink href="/classroom">
+                                    <BreadcrumbLink href="/classroom" className="bg-primary/10 p-1 border border-primary/20 rounded-md">
                                         <div className="grid justify-items-center place-content-center hover:scale-105 transition-transform duration-300">
                                             <School className="text-primary" size={25}/>
-                                            <p className="text-sm">ClassRoom</p>
+                                            <p className="text-sm font-bold">ClassRoom</p>
                                         </div>
                                     </BreadcrumbLink>
                                 </BreadcrumbItem>
                                 <div className="border-l-4 border-primary/50 h-8"></div>
                                 <BreadcrumbItem>
-                                    <BreadcrumbLink href="/notification">
+                                    <BreadcrumbLink href="/notification" className="bg-primary/10 p-1 border border-primary/20 rounded-md">
                                         <div className="grid justify-items-center place-content-center hover:scale-105 transition-transform duration-300">
                                             <Bell className="text-primary" size={25}/>
-                                            <p className="text-sm">Notification</p>
+                                            <p className="text-sm font-bold">Notification</p>
                                         </div>
                                     </BreadcrumbLink>
                                 </BreadcrumbItem>
@@ -197,12 +195,12 @@ export default function Layout({
                         </Breadcrumb>
                     </div>
                 </div>
-                <Suspense fallback={ <Loading/>}>
+                {/* <Suspense fallback={ <Loading/>}> */}
                 <div className="mt-[7.5rem] pb-4">
                     {children}
                     <Toaster />
                 </div>
-                </Suspense>
+                {/* </Suspense> */}
             </div >
         )
     )

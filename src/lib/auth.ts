@@ -29,27 +29,26 @@ export const authOptions: NextAuthOptions = {
                     where: { email: credentials.email }
                 });
                 
-                // if (!existingUser) {
-                //     return null;
-                    
-                // }
                 if(existingUser && await bcrypt.compare(credentials.password, existingUser.password)){
+                    const lastlogin = await db.users.updateMany({
+                        where: {
+                          email: credentials.email
+                        },
+                        data: {
+                          last_login: new Date(), // Set lastLogin to the current date/time
+                        }
+                      });
+                      
                     return {
                         id: `${existingUser.user_id}`,
                         username: existingUser.user_name,
                         email: existingUser.email,
-                        role: `${existingUser.role}`,
+                        role: `${existingUser.role_id}`,
+                        identification:`${existingUser.identification}`
                     }
                 }else{
                     throw new Error('Invalid email or password');
-                }
-
-                // const passwordMatch = await bcrypt.compare(credentials.password, existingUser.password);
-                // if (!passwordMatch) {
-                //     return null;
-                // }
-
-               
+                } 
             }
         })
     ],
@@ -60,7 +59,9 @@ export const authOptions: NextAuthOptions = {
                     ...token,
                     id: user.id,
                     username: user.username,
-                    role: user.role 
+                    role: user.role ,
+                    identification:user.identification,                   
+                    email:user.email,
                 }
             }
             return token;
@@ -72,7 +73,9 @@ export const authOptions: NextAuthOptions = {
                     ...session.user,
                     id: token.id,
                     username: token.username,
-                    role: token.role
+                    role: token.role,
+                    identification: token.identification,
+                    email: token.email,
                 }
             }
         }

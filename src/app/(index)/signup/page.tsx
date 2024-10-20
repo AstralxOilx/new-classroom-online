@@ -1,258 +1,175 @@
 "use client";
-import React from 'react'
-import { Mail, Lock, EyeOff, Eye, User, Layers2, LoaderCircle } from "lucide-react";
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import RoleSelect from '@/components/ui/select-role';
+import InputField from '@/components/ui/input-field';
+import InputPassword from '@/components/ui/input-password';
 import { validateFormSignup } from '@/lib/checkInput';
+import { LogIn } from 'lucide-react';
+import Link from 'next/link';
 import axios from 'axios';
-import {
-    AlertDialog,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-
-function page() {
 
 
-    
-    const [showconfirmPass, setShowconfirmPass] = useState(false);
-    const [showPass, setShowPass] = useState(false);
-    const [warning, setWarning] = useState("");
-    const [cssWarning, setCSSWarning] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
-    const [formData, setFormData] = useState({
-        name: '',
+export default function Page() {
+    const [inputWarning, setInputWarning] = useState('');
+    const [textWarning, setTextWarning] = useState('');
+    const [inputData, setInputData] = useState({
+        user_name: '',
         email: '',
         password: '',
         confirmPassword: '',
+        identification: '',
         role: '',
     });
 
-
-    // ฟังก์ชันสำหรับจัดการเมื่อ input มีการเปลี่ยนแปลง
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target; // ดึง name และ value จาก input
-        setFormData((prevData) => ({
+    // ใช้ฟังก์ชันเดียวในการจัดการอินพุตทุกฟิลด์
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setInputData((prevData) => ({
             ...prevData,
-            [name]: value, // อัปเดตข้อมูลฟอร์มตาม input ที่เปลี่ยนแปลง
+            [name]: value, // อัปเดตตาม name ของฟิลด์ที่กำลังเปลี่ยน
         }));
     };
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        if (formData.email != "" && formData.password != "" && formData.name != "" && formData.confirmPassword != "" && formData.role != "") {
-            if (formData.password === formData.confirmPassword) {
+    const handleSubmit = async () => {
+        // เช็คว่าฟิลด์ทั้งหมดไม่ใช่ค่าว่าง
+        const { user_name, email, password, confirmPassword, identification, role } = inputData;
+
+        if (user_name && email && password && confirmPassword && identification && role) {
+
+            if (password !== confirmPassword) {
+                setInputWarning('Passwords do not match!');
+                setTextWarning('bg-red-100 text-red-800 p-1')
+            } else {
                 try {
-                    setIsLoading(true);
-                    validateFormSignup(formData.name, formData.email, formData.password);
-                    try {
-                        const response = await axios.post('http://localhost:3000/api/auth/signup', formData);
-                        setWarning(response.data.message);
-                        setFormData({
-                            name: '',
-                            email: '',
-                            password: '',
-                            confirmPassword: '',
-                            role: '',
-                        });
-                        setCSSWarning("text-green-600");
-
-
-                    } catch (error: unknown) {
-                        if (axios.isAxiosError(error)) {
-                            // ตรวจสอบว่าข้อผิดพลาดมาจาก Axios หรือไม่
-                            const { response } = error; // รับ response จากข้อผิดพลาด
-                            if (response) {
-                                const { status, data } = response; // รับสถานะและข้อมูลจาก response
-                                if (status === 500 || status === 400) {
-                                    setCSSWarning("text-rose-600");
-                                    setWarning(data.message); // แสดงข้อความเตือน
-                                }
-                            } else {
-                                console.error('No response received:', error.message);
-                            }
-
-                        } else {
-                            console.error('Error during registration:', (error as Error).message); // แสดงข้อความผิดพลาดทั่วไป
-                            setCSSWarning("text-rose-600");
-                        }
-                    }
+                    validateFormSignup(user_name, email, password);
+                    const response = await axios.post('http://localhost:3000/api/auth/signup', {
+                        user_name,
+                        email,
+                        password,
+                        identification,
+                        role
+                    });
+                    setInputData({
+                        user_name: '',
+                        email: '',
+                        password: '',
+                        confirmPassword: '',
+                        identification: '',
+                        role: '',
+                    })
+                    setInputWarning(response.data.message);
+                    setTextWarning('bg-green-100 text-green-800 p-1')
 
                 } catch (error) {
-                    if (error instanceof Error) {
-                        setCSSWarning("text-rose-600");
-                        setWarning(error.message);
+                    if (axios.isAxiosError(error) && error.response) {
+                        setInputWarning(error.response.data.message || 'An error occurred.');
+                        setTextWarning('bg-red-100 text-red-800 p-1')
+                    } else {
+                        setInputWarning('An unexpected error occurred.');
+                        setTextWarning('bg-red-100 text-red-800 p-1')
                     }
                 } finally {
-                    setIsLoading(false);
-                }
-            } else {
-                setWarning('Passwords do not match');
-                setCSSWarning("text-rose-600");
-            }
 
+                }
+
+            }
         } else {
-            setWarning("Please fill in all the required fields.");
-            setCSSWarning("text-rose-600");
+            // แจ้งเตือนว่ามีฟิลด์ที่ว่าง
+            setInputWarning('Please fill in all fields.');
+            setTextWarning('bg-red-100 text-red-800 p-1')
         }
     };
+
+
     return (
         <>
-            <div className='grid justify-items-center'>
-                <AlertDialog open={isLoading} onOpenChange={setIsLoading}>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Sign up....</AlertDialogTitle>
-                            <AlertDialogDescription className='flex gap-2'>
-                                <LoaderCircle size={30} className='animate-spin' />
-                                <span>Currently sign up. Please wait...</span>
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                    </AlertDialogContent>
-                </AlertDialog>
-                <div className='rounded-t-lg h-56 bg-primary/5 w-[300px] sm:w-[700px] min-w-[350px] max-w-[800px]'>
+            <div className='grid gap-2 rounded-md content-center w-[300px] sm:w-[700px] min-w-[350px] max-w-[800px]'>
+                <div className='h-32 bg-primary/10 rounded-md w-[300px] sm:w-[700px] min-w-[350px] max-w-[800px]'></div>
+                <div className='p-2 grid gap-2 w-full border border-primary/10 rounded-md bg-primary/5'>
+                    <div className='bg-primary/5 rounded-md'>
+                        <p className={`text-md font-bold ${textWarning}`}>{inputWarning}</p>
+                    </div>
 
-                </div>
+                    {/* Name input */}
+                    <InputField
+                        onInputChange={(data) => handleInputChange({ target: { name: 'user_name', value: data } } as React.ChangeEvent<HTMLInputElement>)}
+                        type='text'
+                        icon='user'
+                        label='Name'
+                        name='user_name'
+                        description='must contain at least 4 letters And no more than 20 ex.user'
+                        placeholder='name'
+                        value={inputData.user_name}
+                    />
 
-                <div className={`${cssWarning} text-center text-md font-bold bg-primary/10 w-full h-6 p-4`}>
-                    <p>{warning}</p>
-                </div>
-                <div className="flex justify-center content-center bg-primary/10 rounded-b-lg ">
-                    <form onSubmit={handleSubmit}>
-                        <div className='grid gap-1 pl-4 pr-4 pb-4 w-[300px] sm:w-[700px] min-w-[350px] max-w-[900px]'>
-                            <label htmlFor="name">Name</label>
-                            <div className='flex'>
-                                <div className='bg-primary/20 p-1 rounded-l-sm text-primary/60'>
-                                    <User size={28} />
-                                </div>
-                                <input onChange={handleChange} className='rounded-r-sm pl-2 outline-0 border-b-2 border-primary/30 w-full'
-                                    type="text"
-                                    name="name"
-                                    id="name"
-                                    placeholder='name'
-                                    value={formData.name}
-                                />
-                            </div>
-                            <div className='text-sm text-primary bg-primary/5 pl-2 rounded-md'>
-                                <p>must contain at least 4 letters And no more than 20 ex.user</p>
-                            </div>
-                            <label htmlFor="email">Email</label>
-                            <div className='flex'>
-                                <div className='bg-primary/20 p-1 rounded-l-sm text-primary/60'>
-                                    <Mail size={28} />
-                                </div>
-                                <input onChange={handleChange} className='rounded-r-sm pl-2 outline-0 border-b-2 border-primary/30 w-full'
-                                    type="email"
-                                    name="email"
-                                    id="email"
-                                    placeholder='email'
-                                    value={formData.email}
-                                />
-                            </div>
-                            <div className='text-sm text-primary bg-primary/5 pl-2 rounded-md'>
-                                <p>email format ex.user@email.com</p>
-                            </div>
-                            <label htmlFor="password">Password</label>
-                            <div className='flex relative'>
-                                <div className='bg-primary/20 p-1 rounded-l-sm text-primary/60'>
-                                    <Lock size={28} />
-                                </div>
-                                <input
-                                    onChange={handleChange}
-                                    className='rounded-r-sm pl-2 outline-0 border-b-2 border-primary/30 w-full'
-                                    type={showPass ? "text" : "password"}
-                                    name="password"
-                                    id="password"
-                                    placeholder='password'
-                                    value={formData.password}
-                                />
-                                <Button
-                                    variant={"ghost"}
-                                    size={"icon"}
-                                    onClick={(e) => {
-                                        e.preventDefault(); // ป้องกันการส่งฟอร์ม
-                                        setShowPass(!showPass); // เปลี่ยนสถานะ showPass
-                                    }}
-                                    className='rounded-r-sm absolute right-0 text-primary/20 '
-                                >
-                                    {!showPass ? (<EyeOff className='hover:text-primary/60' size={28} />) : (<Eye className='hover:text-primary/60' size={28} />)}
-                                </Button>
-                            </div>
-                            <div className='text-sm text-primary bg-primary/5 pl-2 rounded-md'>
-                                <p>must be at least 6 characters long ex.password</p>
-                            </div>
-                            <label htmlFor="confirmPassword">confirmPassword</label>
-                            <div className='flex relative'>
-                                <div className='bg-primary/20 p-1 rounded-l-sm text-primary/60'>
-                                    <Lock size={28} />
-                                </div>
-                                <input
-                                    onChange={handleChange}
-                                    className='rounded-r-sm pl-2 outline-0 border-b-2 border-primary/30 w-full'
-                                    type={showconfirmPass ? "text" : "password"}
-                                    name="confirmPassword"
-                                    id="confirmPassword"
-                                    placeholder='confirmPassword'
-                                    value={formData.confirmPassword}
-                                />
-                                <Button
-                                    variant={"ghost"}
-                                    size={"icon"}
-                                    onClick={(e) => {
-                                        e.preventDefault(); // ป้องกันการส่งฟอร์ม
-                                        setShowconfirmPass(!showconfirmPass); // เปลี่ยนสถานะ showPass
-                                    }}
-                                    className='rounded-r-sm absolute right-0 text-primary/20'
-                                >
-                                    {!showconfirmPass ? (<EyeOff className='hover:text-primary/60' size={28} />) : (<Eye className='hover:text-primary/60' size={28} />)}
-                                </Button>
-                            </div>
-                            <div className='text-sm text-primary bg-primary/5 pl-2 rounded-md'>
-                                <p>Passwords must match ex.password</p>
-                            </div>
+                    {/* Email input */}
+                    <InputField
+                        onInputChange={(data) => handleInputChange({ target: { name: 'email', value: data } } as React.ChangeEvent<HTMLInputElement>)}
+                        type='mail'
+                        icon='mail'
+                        label='Email'
+                        name='email'
+                        description='email format ex.user@email.com'
+                        placeholder='email'
+                        value={inputData.email}
+                    />
 
-                            <label htmlFor="role">Role</label>
-                            <div className='flex'>
-                                <div className='bg-primary/20 p-1 rounded-l-sm text-primary/60'>
-                                    <Layers2 size={28} />
-                                </div>
-                                <select
-                                    className='rounded-r-sm pl-2 outline-0 border-b-2 border-primary/30 '
-                                    id="role"
-                                    name="role"
-                                    value={formData.role}
-                                    onChange={handleChange} // เชื่อมโยงฟังก์ชัน handleChange
-                                >
-                                    <option value="">Select a role</option>
-                                    <option value="student">Student</option>
-                                    <option value="teacher">Teacher</option>
-                                </select>
-                            </div>
+                    {/* Role select */}
+                    <RoleSelect
+                        onRoleChange={(data) => handleInputChange({ target: { name: 'role', value: data } } as React.ChangeEvent<HTMLSelectElement>)}
+                        value={inputData.role}
+                    />
 
-                            <div className='text-sm text-primary bg-primary/5 pl-2 rounded-md'>
-                                <p>Select the role: Student or Teacher</p>
+                    {/* Student ID or Teacher ID input */}
+                    <InputField
+                        onInputChange={(data) => handleInputChange({ target: { name: 'identification', value: data } } as React.ChangeEvent<HTMLInputElement>)}
+                        type='text'
+                        icon='idCard'
+                        label='Student ID OR Teacher ID'
+                        name='identification'
+                        description='Student ID or Teacher ID ex.65123456789-1'
+                        placeholder='Student ID or Teacher ID'
+                        value={inputData.identification}
+                    />
 
-                            </div>
-                            <div className='w-[100px]'>
-                                <Button
-                                    variant={"default"}
-                                    size={"sm"}
-                                    type='submit'
-                                    className='bg-primary/90'
-                                >
-                                    Sign In
-                                </Button>
-                            </div>
-                            <p className='text-md mt-1'>You haven't <Link href={"/"} className='text-primary/80 underline'>Signed in</Link> yet, right?</p>
-                        </div>
-                    </form>
+                    {/* Password input */}
+                    <InputPassword
+                        onPasswordChange={(data) => handleInputChange({ target: { name: 'password', value: data } } as React.ChangeEvent<HTMLInputElement>)}
+                        label='Password'
+                        name='password'
+                        description='must be at least 6 characters long ex.password'
+                        placeholder='password'
+                        value={inputData.password}
+                    />
+
+                    {/* Confirm Password input */}
+                    <InputPassword
+                        onPasswordChange={(data) => handleInputChange({ target: { name: 'confirmPassword', value: data } } as React.ChangeEvent<HTMLInputElement>)}
+                        label='Confirm Password'
+                        name='confirmPassword'
+                        description='Confirm Password ex.password matches password'
+                        placeholder='Confirm Password'
+                        value={inputData.confirmPassword}
+                    />
+
+                    {/* Sign Up Button */}
+                    <Button
+                        className='w-24'
+                        variant={"default"}
+                        size={"sm"}
+                        onClick={handleSubmit}
+                    >
+                        <LogIn />
+                        Sign Up
+                    </Button>
+
+                    {/* Link to Sign In */}
+                    <p className='text-md mt-1'>
+                        You haven't <Link href={"/"} className='text-primary/80 underline'>Signed in</Link> yet, right?
+                    </p>
                 </div>
             </div>
         </>
-    )
+    );
 }
-
-export default page

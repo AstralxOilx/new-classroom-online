@@ -1,57 +1,73 @@
-import React, { useState } from 'react';
-import { Subject } from '@prisma/client';
+import React, { useState, useEffect } from 'react';
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select";
-import { SquareSlash } from "lucide-react";
+} from '@/components/ui/select';
+import axios from 'axios';
+import { BookOpenText,Ellipsis } from 'lucide-react';
+type subject = {
+    subject_id: number;
+    subject_name: string;
+};
 
-interface SelectSubjectTypesProps {
-    onValueChange?: (type: string) => void; // รับ callback เพื่อส่งค่า
+interface SubjectSelectProps {
+    onSubjectChange: (subject: string) => void; // เพิ่ม props สำหรับ callback
+    value: string | undefined;
 }
 
-const SubjectTypeEnum = Object.values(Subject);
-const formatWithSpaces = (text: string) => {
-    return text.replace(/([A-Z])/g, ' $1').trim();
-};
 
-const SelectSubject: React.FC<SelectSubjectTypesProps> = ({ onValueChange }) => {
-    const [selectedSubjectType, setSelectedSubjectType] = useState(''); // แก้ไขชื่อ state
+export default function SubjectSelect({ onSubjectChange,value }: SubjectSelectProps) {
+    const [resource] = useState("subjects");
+    const [subjects, setSubjects] = useState<subject[]>([]);
+    const [selectedSubject, setSelectedSubject] = useState<string | undefined>(value);
 
-    const handleSubjectTypeChange = (type: string) => {
-        setSelectedSubjectType(type);
-        if (onValueChange) {
-            onValueChange(type); // ส่งค่าประเภทที่เลือกออกไป
-        }
+    useEffect(() => {
+        const fetchColors = async () => {
+            try {
+                // สร้าง URL สำหรับเรียก API
+                const response = await axios.get(`http://localhost:3000/api/get_resource?resource=${resource}`);
+                setSubjects(response.data);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        };
+
+        fetchColors();
+    }, [resource]); // เรียกใช้ฟังก์ชันเมื่อ table เปลี่ยนแปลง
+
+    useEffect(() => {
+        setSelectedSubject(value); // อัปเดต selectedRole เมื่อ value เปลี่ยนแปลง
+    }, [value]);
+
+    const handleColorChange = (subject: string) => {
+        setSelectedSubject(subject);
+        onSubjectChange(subject);
     };
 
+
     return (
-        <div>
-            <p>Subject</p>
-            <div className='flex'>
-                <div className='bg-primary/20 p-1 rounded-l-sm text-primary/60'>
-                    <SquareSlash size={28} />
-                </div>
-                <Select onValueChange={handleSubjectTypeChange}>
-                    <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a Subject Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {SubjectTypeEnum.map((type) => (
-                            <SelectItem key={type} value={type}>
-                                <div className='flex gap-2 items-center'>
-                                {formatWithSpaces(type.charAt(0).toUpperCase() + type.slice(1))}
-                                </div>
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+        <div className='w-full flex items-center'>
+            <div className='border h-10 rounded-l-md p-1 text-primary bg-primary/10'>
+                <BookOpenText size={28} className="text-primary/80"/>
             </div>
+            <Select onValueChange={handleColorChange} value={selectedSubject ?? undefined}>
+                <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a subject" />
+                </SelectTrigger>
+                <SelectContent>
+                    {subjects.map((subject) => (
+                        <SelectItem key={subject.subject_id} value={subject.subject_id.toString()}>
+                            <div className='flex gap-2'>
+                                <Ellipsis  className="text-primary/10"/>
+                                {subject.subject_name}
+                            </div>
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
         </div>
     );
-};
-
-export { SelectSubject };
+}

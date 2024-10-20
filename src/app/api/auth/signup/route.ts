@@ -3,10 +3,9 @@ import { db } from '@/lib/db';
 
 export async function POST(request: Request) {
     try {
-        const { name, email, password, role } = await request.json();
-
-
-        // เช็คว่าอีเมลมีอยู่ในฐานข้อมูลหรือไม่
+        const { user_name, email, password,identification, role, } = await request.json();
+        const roleInt = parseInt(role);
+        const identificationReplace = identification.replace(/[-\s]/g, '');
         const existingUser = await db.users.findUnique({
             where: { email: email },
         });
@@ -14,7 +13,7 @@ export async function POST(request: Request) {
         if (existingUser) {
             return  Response.json(
                 { 
-                    message: 'Email already exists.' 
+                    message: 'Email already exists.'
                 },{ status: 400 }
             )
             
@@ -23,24 +22,26 @@ export async function POST(request: Request) {
         const hashedPassword = bcrypt.hashSync(password, 10);
         const newUser = await db.users.create({
             data: {
-                user_name: name,
+                user_name: user_name,
                 email: email,
                 password: hashedPassword,
-                role: role,
+                role_id:roleInt,
+                identification: identificationReplace,
             },
         })
 
         return Response.json({
-            message: 'User created successfully!',
-            data:{
-                newUser
-            }
+            message: 'User created successfully!', 
         })
 
     } catch (error) {
-        return Response.json({
-            error
-        }, { status: 500 });
+        console.error(error); // แสดงข้อผิดพลาดในบันทึก
+        return Response.json(
+            {
+                message: 'Internal Server Error', 
+            },
+            { status: 500 }
+        );
     }
 
 }
